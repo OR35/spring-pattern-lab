@@ -56,8 +56,20 @@ public class SecurityUtil {
     // 3. 내부 구현 (SecurityContext 접근 은닉)
     public static LoginUser getLoginUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof LoginUser)) return null;
+
+        if (auth == null || !(auth.getPrincipal() instanceof LoginUser)) {
+            return null;
+        }
         return (LoginUser) auth.getPrincipal();
+    }
+
+    public static LoginAdmin getLoginAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !(auth.getPrincipal() instanceof LoginAdmin)) {
+            return null;
+        }
+        return (LoginAdmin) auth.getPrincipal();
     }
 }
 ```

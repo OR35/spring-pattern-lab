@@ -58,4 +58,4 @@ const googleLogin = () => {
 
 ---
 
-> **연관 패턴:** [커스텀 팝업 기반의 소셜 로그인 연동 패턴](../../dev-notes/auth/auth-userinfo-refactoring-log.md)
+> **연관 패턴:** [커스텀 팝업 기반의 소셜 로그인 연동 패턴](../../pattenrs/auth/google-oauth-flow.md)

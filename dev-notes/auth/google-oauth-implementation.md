@@ -1,6 +1,10 @@
-# [Refactoring] Google OAuth 2.0 구현 방식 비교 및 최적화
+# [Refactoring] Google OAuth 2.0: 라이브러리에서 커스텀 팝업 방식으로의 전환
 
 구글 로그인을 구현하며 사용한 두 가지 방식(Custom Popup + postMessage / vue3-google-login 라이브러리)의 차이점과 보안적 고려사항을 정리합니다.
+
+디자인 커스터마이징(다크모드 대응) 및 Form 제어의 유연성을 확보하기 위해 기존 라이브러리(`vue3-google-login`)를 걷어내고 직접 OAuth 흐름을 구현한 기록입니다.
+
+---
 
 ## 1. 구현 방식 비교
 
@@ -12,39 +16,7 @@
 
 ---
 
-## 2. 주요 이슈 및 해결 과정
-
-### 이슈 1: 팝업창 데이터 통신 (Cross-Origin)
-- **문제**: 백엔드 콜백 페이지에서 로그인을 완료한 후, 부모 창(Vue App)으로 데이터를 전달해야 함.
-- **해결**: `window.opener.postMessage`를 사용하되, `event.origin` 체크를 통해 허용된 백엔드 도메인에서 온 메시지만 수락하도록 보안 로직 강화.
-
-### 이슈 2: JWT (idToken) 디코딩
-- **문제**: 구글에서 넘겨준 `credential`은 인코딩된 JWT 형태라 백엔드에 보내기 전 프론트에서 사용자 정보를 확인할 수 없음.
-- **해결**: `atob`와 `decodeURIComponent`를 활용한 JWT 파싱 함수(`parseJwt`)를 구현하여 백엔드 호출 전 `email`, `name` 등을 선추출함.
-
----
-
-## 3. 핵심 코드 (백엔드 HTML 반환 방식)
-백엔드 콜백에서 JSON 데이터를 바로 반환하는 것이 아니라, 브라우저가 실행할 수 있는 HTML/JS를 반환하여 팝업을 닫고 부모 창에 데이터를 전달함.
-
-```java
-String html = "<!DOCTYPE html><html><body>" +
-              "<script>" +
-              "window.opener.postMessage(" + json + ", '" + uri + "');" +
-              "window.close();" +
-              "</script>" +
-              "</body></html>";
-
----
-
-> **연관 패턴:** [Google OAuth 2.0 인증 흐름 패턴](../../patterns/auth/google-oauth-flow.md)
-# [Refactoring] Google OAuth 2.0: 라이브러리에서 커스텀 팝업 방식으로의 전환
-
-디자인 커스터마이징(다크모드 대응) 및 Form 제어의 유연성을 확보하기 위해 기존 라이브러리(`vue3-google-login`)를 걷어내고 직접 OAuth 흐름을 구현한 기록입니다.
-
----
-
-## 1. 문제 상황 (As-Is)
+## 2. 문제 상황 (As-Is)
 기존에는 `vue3-google-login` 라이브러리를 사용하여 빠르고 간편하게 로그인을 구현했습니다.
 
 ### 🧐 발생한 한계점
@@ -53,7 +25,7 @@ String html = "<!DOCTYPE html><html><body>" +
 
 ---
 
-## 2. 해결 과정 및 개선 (To-Be)
+## 3. 해결 과정 및 개선 (To-Be)
 라이브러리를 제거하고, **`window.open` (팝업)**과 **`postMessage` API**를 사용하여 직접 구글 OAuth 2.0 흐름을 제어하도록 리팩토링했습니다.
 
 
@@ -79,7 +51,7 @@ const googleLogin = () => {
 ```
 ---
 
-## 3. 성과 및 회고
+## 4. 성과 및 회고
 
 1. 자율성 확보: 더 이상 외부 라이브러리의 업데이트나 제약 사항에 얽매이지 않고 서비스 요구사항에 맞는 로그인을 구현할 수 있게 됨.
 2. 보안 강화: postMessage 수신 시 origin 검증 로직을 직접 구현함으로써 크로스 사이트 스크립팅(XSS) 위협에 대응함.

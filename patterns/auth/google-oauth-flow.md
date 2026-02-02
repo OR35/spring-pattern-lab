@@ -15,6 +15,14 @@
 
 ### `vue3-google-login` 기존 구조
 
+``` vue
+<GoogleLogin
+  :callback="handleGoogleLoginSuccess"
+  @error="handleError"
+  class="btn-round-line"
+/>
+```
+
 ```javascript
 // 토큰 값 디코딩
 const parseJwt = token => {
@@ -87,6 +95,30 @@ String idToken = body.get("idToken");
 ### 🔹 [Frontend] 팝업 생성 및 리스너 등록
 부모 창은 인증 페이지를 팝업으로 띄우고, `message` 이벤트를 통해 인증 결과를 기다립니다.
 
+``` vue
+<div class="login-wrapper">
+  <button
+    class="google-btn"
+    :class="{ 'google-btn-dark': isDarkMode }"
+    @click="googleLogin"
+  >
+    <img
+      :src="googleIcon"
+      alt="Google"
+      class="google-icon"
+      :class="{ 'fade-out': isDarkMode, 'fade-in': !isDarkMode }"
+    />
+    <img
+      :src="googleIconDark"
+      alt="Google Dark"
+      class="google-icon absolute top-0 left-0"
+      :class="{ 'fade-in': isDarkMode, 'fade-out': !isDarkMode }"
+    />
+    <span>Google 계정으로 로그인</span>
+  </button>
+</div>
+```
+
 ```javascript
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const redirectUrl = import.meta.env.VITE_APP_GOOGLE_REDIRECT_URI;
@@ -133,6 +165,46 @@ const googleLogin = () => {
     router.push(redirectPath);
   });
 };
+
+<style scoped>
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background-color: white;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+.google-btn:hover {
+  background-color: #f7f7f7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.google-btn-dark {
+  background-color: #213547;
+  border: 1px solid #333;
+  color: #fff;
+}
+
+.google-btn-dark:hover {
+  background-color: #213547;
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+</style>
 ```
 
 ### 🔹[Backend] 콜백 페이지 구현

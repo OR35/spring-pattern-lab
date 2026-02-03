@@ -15,7 +15,7 @@
 
 ### `vue3-google-login` 기존 구조
 
-``` vue
+``` html
 <GoogleLogin
   :callback="handleGoogleLoginSuccess"
   @error="handleError"
@@ -95,7 +95,7 @@ String idToken = body.get("idToken");
 ### 🔹 [Frontend] 팝업 생성 및 리스너 등록
 부모 창은 인증 페이지를 팝업으로 띄우고, `message` 이벤트를 통해 인증 결과를 기다립니다.
 
-``` vue
+``` html
 <div class="login-wrapper">
   <button
     class="google-btn"
@@ -244,6 +244,91 @@ public void googleLogin(@RequestParam("code") String code, HttpServletResponse r
     response.setContentType("text/html;charset=UTF-8");
     response.getWriter().write(html);
 }
+```
+
+- 구글 토큰 검증 컴포넌트
+
+```java
+@Component
+public class GoogleTokenVerifier {
+
+    private final GoogleIdTokenVerifier verifier;
+
+    private final String clientId = "google oauth ID 값";
+
+    public GoogleTokenVerifier() {
+        verifier = new GoogleIdTokenVerifier.Builder(
+                new NetHttpTransport(),
+                GsonFactory.getDefaultInstance()
+            )
+            .setAudience(Collections.singletonList(clientId))
+            .build();
+    }
+
+    public GoogleUserEntity verify(String idTokenString) {
+        try {
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+
+                String provider = "google";
+                String providerId = payload.getSubject();
+                String email = payload.getEmail();
+                String name = (String) payload.get("name");
+
+                return new GoogleUserEntity(provider, providerId, email, name);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+}
+```
+
+```Java
+@Transactional
+public Map<String, Object> googleLoginByOauth(String code) {
+    // 인증 정보
+    String googleClientId = "google OAuth ID 값";
+    String googleSecretKey = "OAuth SecretKey";
+    String googleRedirectUri = authInfo.getGoogleRedirectUri();
+
+    // 1. Google OAuth 토큰 요청
+    RestTemplate restTemplate = new RestTemplate();
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+    params.add("code", code);
+    params.add("client_id", googleClientId);
+    params.add("client_secret", googleSecretKey);
+    params.add("redirect_uri", googleRedirectUri);
+    params.add("grant_type", "authorization_code");
+
+    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+    ResponseEntity<Map> response = restTemplate.postForEntity(
+            "https://oauth2.googleapis.com/token",
+            request,
+            Map.class
+    );
+
+    if (!response.getStatusCode().is2xxSuccessful()) {
+        throw new RuntimeException("Failed to get Google access token");
+    }
+
+    Map<String, Object> tokenResponse = response.getBody();
+    String idToken = (String) tokenResponse.get("id_token");
+
+    // 구글 토큰 검증
+    GoogleUserEntity googleUser = googleTokenVerifier.verify(idToken);
+    if (googleUser == null) {
+        throw new RuntimeException("Invalid Google token");
+    }
+    
+    //...
 ```
 ---
 
